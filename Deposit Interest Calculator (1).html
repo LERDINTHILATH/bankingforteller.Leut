@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Deposit Interest Calculator</title>
+<style>
+:root{--bg:#eef3f6;--surface:#fff;--ink:#0c2a3a;--muted:#587080;--line:#d3dfe6;--accent:#0a7f95;--accent-ink:#fff;--soft:#e2f2f5;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#071c2a;--surface:#0d2b3f;--ink:#e8f3f7;--muted:#8fb0c0;--line:#1d4560;--accent:#27b6cf;--accent-ink:#04202b;--soft:#113a52}}
+:root[data-theme="dark"]{--bg:#071c2a;--surface:#0d2b3f;--ink:#e8f3f7;--muted:#8fb0c0;--line:#1d4560;--accent:#27b6cf;--accent-ink:#04202b;--soft:#113a52}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Lao","Noto Sans",system-ui,sans-serif;line-height:1.5}
+main{max-width:520px;margin:0 auto;padding:24px 16px 40px}
+h1{font-size:1.5rem;margin:0 0 4px}
+p.sub{margin:0 0 20px;color:var(--muted);font-size:.95rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+label{display:block;font-weight:600;font-size:.9rem;margin:14px 0 6px}
+label:first-child{margin-top:0}
+input,select{width:100%;font:inherit;font-size:1.05rem;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.result{margin-top:16px}
+.big{background:var(--accent);color:var(--accent-ink);border-radius:14px;padding:18px}
+.big small{display:block;opacity:.85}
+.big strong{font-size:1.9rem;display:block;overflow-wrap:anywhere}
+dl{margin:14px 0 0;display:grid;grid-template-columns:1fr auto;gap:8px 12px}
+dt{color:var(--muted)}dd{margin:0;font-weight:600;text-align:right}
+.note{margin-top:14px;font-size:.82rem;color:var(--muted)}
+.err{color:#c0392b;font-size:.9rem;margin-top:10px}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:20px}
+.tabs button{font:inherit;font-size:.78rem;font-weight:600;padding:10px 2px;border:0;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.atm{margin-bottom:16px}
+.lang{display:flex;justify-content:flex-end;gap:6px;margin-bottom:10px}
+.lang button{font:inherit;font-size:.82rem;font-weight:600;padding:4px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.vis{border-radius:14px 14px 0 0;padding:18px;min-height:118px;display:flex;flex-direction:column;justify-content:space-between}
+.vis.blue{background:linear-gradient(135deg,#0b4f9c,#1c8fd6);color:#fff}
+.vis.gold{background:linear-gradient(135deg,#a8791c,#f0cf73);color:#2b1d00}
+.vis b{font-size:1.2rem}.vis span{font-size:.85rem;opacity:.9}
+.vis .lim{font-size:1.4rem;font-weight:700;display:block;opacity:1}
+.atm .body{border:1px solid var(--line);border-top:0;border-radius:0 0 14px 14px;background:var(--surface);padding:6px 14px 12px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{padding:10px 6px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:600;font-size:.82rem}
+tr:last-child td{border-bottom:0}
+</style>
+</head>
+<body>
+<main>
+<div class="lang"><button id="l-en" aria-pressed="true">EN</button><button id="l-lo" aria-pressed="false">ລາວ</button></div>
+<div class="tabs" role="tablist"><button role="tab" id="t1" aria-selected="true">Interest</button><button role="tab" id="t2" aria-selected="false">ATM cards</button><button role="tab" id="t3" aria-selected="false">Accounts</button><button role="tab" id="t4" aria-selected="false">Withdraw</button><button role="tab" id="t5" aria-selected="false">Lapass</button></div>
+<section id="p1">
+<h1>Deposit interest calculator</h1>
+<p class="sub">Fixed deposit rates by currency, term and payout type.</p>
+<div class="card">
+  <label for="amt">Amount</label>
+  <input id="amt" type="text" inputmode="decimal" placeholder="e.g. 10,000,000" autocomplete="off">
+  <div class="row">
+    <div><label for="cur">Currency</label>
+      <select id="cur"><option value="0">LAK</option><option value="1">USD</option><option value="2">THB</option><option value="3">CNY</option></select></div>
+    <div><label for="mon">Term</label><select id="mon"></select></div>
+  </div>
+  <label for="typ">Interest payment</label>
+  <select id="typ"></select>
+  <div id="err" class="err" role="alert"></div>
+</div>
+<div class="result" id="out" hidden>
+  <div class="big"><small>Total interest</small><strong id="tot"></strong></div>
+  <div class="card" style="margin-top:12px">
+    <dl id="det"></dl>
+    <p class="note">Formula: interest = amount × annual rate × months ÷ 12 (simple interest). Monthly payout = amount × rate ÷ 12; yearly payout = amount × rate. Rates are treated as per year.</p>
+  </div>
+</div>
+</section>
+<section id="p2" hidden>
+<h1>UnionPay ATM cards</h1>
+<p class="sub">Card fees and daily ATM withdrawal limits. <span style="display:inline-block;background:var(--soft);color:var(--accent);font-weight:700;border-radius:6px;padding:0 8px;white-space:nowrap">Code: PL52922</span></p>
+<div class="atm"><div class="vis blue"><b>Blue UnionPay</b><span>Daily ATM withdrawal<span class="lim">12,000,000 LAK</span></span></div>
+<div class="body"><table><thead><tr><th>Card type</th><th>New card</th><th>Replacement (lost)</th></tr></thead><tbody>
+<tr><td>Normal</td><td>50,000 LAK</td><td>40,000 LAK</td></tr>
+<tr><td>Quick</td><td>80,000 LAK</td><td>60,000 LAK</td></tr></tbody></table></div></div>
+<div class="atm"><div class="vis gold"><b>Gold UnionPay</b><span>Daily ATM withdrawal<span class="lim">20,000,000 LAK</span></span></div>
+<div class="body"><table><thead><tr><th>Card type</th><th>New card</th><th>Replacement (lost)</th></tr></thead><tbody>
+<tr><td>Normal</td><td>60,000 LAK</td><td>50,000 LAK</td></tr>
+<tr><td>Quick</td><td>90,000 LAK</td><td>70,000 LAK</td></tr></tbody></table></div></div>
+</section>
+<section id="p3" hidden>
+<h1>Account fees</h1>
+<p class="sub">Opening and closing an account. <span style="display:inline-block;background:var(--soft);color:var(--accent);font-weight:700;border-radius:6px;padding:0 8px;white-space:nowrap">Code: PL54034</span></p>
+<h2 style="font-size:1.05rem;margin:0 0 8px">Minimum opening balance</h2>
+<div class="card" style="overflow-x:auto"><table><thead><tr><th>Currency</th><th>Savings</th><th>Fixed</th><th>Current</th></tr></thead><tbody>
+<tr><td>LAK</td><td>50,000</td><td>1,000,000</td><td>1,000,000</td></tr>
+<tr><td>USD</td><td>10</td><td>100</td><td>100</td></tr>
+<tr><td>THB</td><td>200</td><td>2,000</td><td>2,000</td></tr>
+<tr><td>CNY</td><td>100</td><td>500</td><td>500</td></tr></tbody></table>
+<p class="note">A current account has the same minimum balance as a fixed account.</p></div>
+<h2 style="font-size:1.05rem;margin:22px 0 8px">Closing fee</h2>
+<div class="card"><table><thead><tr><th>Account currency</th><th>Fee to close</th></tr></thead><tbody>
+<tr><td>LAK</td><td>30,000 LAK</td></tr>
+<tr><td>USD</td><td>4 USD</td></tr>
+<tr><td>THB</td><td>140 THB</td></tr>
+<tr><td>CNY</td><td>20 CNY</td></tr></tbody></table></div>
+</section>
+<section id="p4" hidden>
+<h1>Cash withdrawal fee</h1>
+<p class="sub">No fee up to 200,000,000 LAK. Above that, the fee is 0.02% of the amount.</p>
+<div class="card"><label for="wd">Withdrawal amount (LAK)</label>
+<input id="wd" type="text" inputmode="decimal" placeholder="e.g. 250,000,000" autocomplete="off">
+<div id="wderr" class="err" role="alert"></div></div>
+<div class="result" id="wdout" hidden><div class="big"><small>Fee</small><strong id="wdfee"></strong></div>
+<div class="card" style="margin-top:12px"><dl id="wddet"></dl>
+<p class="note">Formula: fee = amount × 0.02% when the amount is more than 200,000,000 LAK. The fee applies to the whole amount.</p></div></div>
+</section>
+<section id="p5" hidden>
+<h1>Lapass transfer fee</h1>
+<p class="sub">Enter the amount and currency to see the fee. <span style="display:inline-block;background:var(--soft);color:var(--accent);font-weight:700;border-radius:6px;padding:0 8px;white-space:nowrap">Code: PL52057</span></p>
+<div class="card"><label for="lpc">Currency</label>
+<select id="lpc"><option>LAK</option><option>USD</option><option>THB</option><option>CNY</option></select>
+<label for="lp">Amount</label>
+<input id="lp" type="text" inputmode="decimal" placeholder="e.g. 50,000,000" autocomplete="off">
+<div id="lperr" class="err" role="alert"></div></div>
+<div class="result" id="lpout" hidden><div class="big"><small>Fee</small><strong id="lpfee"></strong></div>
+<div class="card" style="margin-top:12px"><dl id="lpdet"></dl></div></div>
+</section>
+</main>
+<script>
+// Rates per year (%) in order [LAK, USD, THB, CNY]; null = not offered.
+// a = interest paid in advance (first year), m = monthly, y = yearly, e = at maturity
+var R={
+3:{e:[3.35,1.70,1.50,1.40]},
+6:{e:[4.00,3.00,2.30,1.70]},
+9:{e:[4.77,3.25,2.50,null]},
+12:{m:[5.44,3.19,2.80,null],e:[5.59,3.50,3.20,2.00]},
+15:{m:[5.61,3.67,3.02,null],e:[5.87,3.78,3.25,null]},
+18:{m:[5.78,4.00,3.25,null],e:[6.15,4.15,3.35,null]},
+21:{m:[5.95,4.33,3.47,null],e:[6.43,4.53,3.60,null]},
+24:{m:[6.12,4.69,3.71,null],y:[6.31,4.78,3.78,null],e:[6.71,4.90,3.85,2.50]},
+30:{m:[6.24,5.06,4.31,null],e:[6.74,5.40,4.60,null]},
+36:{a:[6.15,5.32,4.80,null],m:[6.35,5.45,4.97,null],y:[6.47,5.59,5.09,null],e:[6.77,6.00,5.35,3.00]},
+42:{m:[6.38,5.48,5.00,null],e:[6.80,6.10,5.48,null]},
+48:{a:[6.21,5.39,4.89,null],m:[6.41,5.52,5.06,null],y:[6.53,5.66,5.18,null],e:[6.90,6.25,5.60,3.50]},
+54:{m:[6.45,5.63,5.13,null],e:[6.95,6.40,5.85,null]},
+60:{a:[6.28,5.63,5.14,null],m:[6.48,5.75,5.34,null],y:[6.60,5.90,5.47,null],e:[7.00,6.65,6.10,4.00]}
+};
+var NAMES={a:"Paid in advance (first year)",m:"Paid monthly",y:"Paid yearly",e:"Paid at maturity"};
+var CUR=["LAK","USD","THB","CNY"];
+var $=function(i){return document.getElementById(i)};
+var amt=$("amt"),cur=$("cur"),mon=$("mon"),typ=$("typ");
+
+function fmt(n,c){var d=c===0?0:2;return n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})+" "+CUR[c]}
+function terms(){var c=+cur.value,old=mon.value;mon.innerHTML="";
+  Object.keys(R).forEach(function(m){var t=R[m],ok=false;for(var k in t){if(t[k][c]!=null)ok=true}
+    if(ok){var o=document.createElement("option");o.value=m;o.textContent=m+" months";mon.appendChild(o)}});
+  if([].some.call(mon.options,function(o){return o.value===old}))mon.value=old;
+  types()}
+function types(){var c=+cur.value,t=R[mon.value],old=typ.value;typ.innerHTML="";
+  ["a","m","y","e"].forEach(function(k){if(t[k]&&t[k][c]!=null){var o=document.createElement("option");o.value=k;o.textContent=NAMES[k]+" · "+t[k][c].toFixed(2)+"%";typ.appendChild(o)}});
+  if([].some.call(typ.options,function(o){return o.value===old}))typ.value=old;
+  calc()}
+function calc(){
+  var raw=amt.value.replace(/,/g,"").trim(),P=parseFloat(raw),c=+cur.value,m=+mon.value,k=typ.value;
+  $("err").textContent="";
+  if(!raw){$("out").hidden=true;return}
+  if(!(P>0)||!isFinite(P)){$("err").textContent="Enter an amount greater than 0.";$("out").hidden=true;return}
+  var r=R[m][k][c]/100,total=P*r*m/12,rows=[["Rate per year",(r*100).toFixed(2)+"%"],["Deposit",fmt(P,c)],["Term",m+" months"]];
+  if(k==="m"){rows.push(["Each month",fmt(P*r/12,c)])}
+  else if(k==="y"){var n=Math.floor(m/12);rows.push(["Each year (×"+n+")",fmt(P*r,c)]);if(m%12)rows.push(["Final partial year",fmt(P*r*(m%12)/12,c)])}
+  else if(k==="a"){rows.push(["Paid upfront (12 months)",fmt(P*r,c)]);rows.push(["Paid at maturity",fmt(total-P*r,c)])}
+  else rows.push(["Interest at maturity",fmt(total,c)]);
+  rows.push(["Total received at maturity",fmt(P+(k==="a"?total:total),c)]);
+  $("tot").textContent=fmt(total,c);
+  $("det").innerHTML=rows.map(function(x){return "<dt>"+x[0]+"</dt><dd>"+x[1]+"</dd>"}).join("");
+  $("out").hidden=false}
+amt.addEventListener("input",function(){var v=amt.value.replace(/[^0-9.]/g,"");var p=v.split(".");p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,",");amt.value=p.length>1?p[0]+"."+p.slice(1).join("").slice(0,2):p[0];calc()});
+cur.addEventListener("change",terms);mon.addEventListener("change",types);typ.addEventListener("change",calc);
+terms();
+function tab(n){[1,2,3,4,5].forEach(function(i){$("p"+i).hidden=i!==n;$("t"+i).setAttribute("aria-selected",i===n)})}
+$("t1").onclick=function(){tab(1)};$("t2").onclick=function(){tab(2)};$("t3").onclick=function(){tab(3)};$("t4").onclick=function(){tab(4)};$("t5").onclick=function(){tab(5)};
+var lp=$("lp"),lpc=$("lpc");
+function lpcalc(){
+  var raw=lp.value.replace(/,/g,""),A=parseFloat(raw),c=lpc.value,f,u="LAK";
+  var n=function(x,k){return x.toLocaleString("en-US",{maximumFractionDigits:2})+" "+k};
+  $("lperr").textContent="";
+  if(!raw){$("lpout").hidden=true;return}
+  if(!(A>0)||!isFinite(A)){$("lperr").textContent="Enter an amount greater than 0.";$("lpout").hidden=true;return}
+  if(c==="LAK")f=A<=100000000?9000:12000;
+  else if(c==="USD")f=A<=15000?15000:25000;
+  else if(c==="THB")f=A<=400000?15000:25000;
+  else{u="CNY";f=A<=300000?20:A<=500000?30:A<=2500000?40:50}
+  $("lpfee").textContent=n(f,u);
+  $("lpdet").innerHTML="<dt>Amount</dt><dd>"+n(A,c)+"</dd><dt>Fee</dt><dd>"+n(f,u)+"</dd><dt>Fee charged in</dt><dd>"+u+"</dd>";
+  $("lpout").hidden=false}
+lp.addEventListener("input",function(){var v=lp.value.replace(/[^0-9.]/g,""),p=v.split(".");p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,",");lp.value=p.length>1?p[0]+"."+p.slice(1).join("").slice(0,2):p[0];lpcalc()});
+lpc.addEventListener("change",lpcalc);
+
+// ---- Lao translation (EN / ລາວ) ----
+var DICT={"Interest":"ດອກເບ້ຍ","ATM cards":"ບັດ ATM","Accounts":"ບັນຊີ","Withdraw":"ຖອນເງິນ",
+"Deposit interest calculator":"ເຄື່ອງຄິດໄລ່ດອກເບ້ຍເງິນຝາກ",
+"Fixed deposit rates by currency, term and payout type.":"ອັດຕາດອກເບ້ຍເງິນຝາກປະຈຳ ຕາມສະກຸນເງິນ, ໄລຍະເວລາ ແລະ ປະເພດການຈ່າຍດອກເບ້ຍ.",
+"Amount":"ຈຳນວນເງິນ","Currency":"ສະກຸນເງິນ","Term":"ໄລຍະເວລາ","Interest payment":"ການຈ່າຍດອກເບ້ຍ","Total interest":"ດອກເບ້ຍລວມ",
+"Formula: interest = amount × annual rate × months ÷ 12 (simple interest). Monthly payout = amount × rate ÷ 12; yearly payout = amount × rate. Rates are treated as per year.":"ສູດຄິດໄລ່: ດອກເບ້ຍ = ຈຳນວນເງິນ × ອັດຕາຕໍ່ປີ × ຈຳນວນເດືອນ ÷ 12 (ດອກເບ້ຍແບບງ່າຍ). ດອກເບ້ຍລາຍເດືອນ = ຈຳນວນເງິນ × ອັດຕາ ÷ 12; ດອກເບ້ຍລາຍປີ = ຈຳນວນເງິນ × ອັດຕາ. ອັດຕາຖືວ່າເປັນຕໍ່ປີ.",
+"Enter an amount greater than 0.":"ກະລຸນາໃສ່ຈຳນວນເງິນທີ່ຫຼາຍກວ່າ 0.",
+"Paid in advance (first year)":"ຈ່າຍດອກເບ້ຍລ່ວງໜ້າ (ປີທຳອິດ)","Paid monthly":"ຈ່າຍດອກເບ້ຍລາຍເດືອນ","Paid yearly":"ຈ່າຍດອກເບ້ຍລາຍປີ","Paid at maturity":"ຈ່າຍດອກເບ້ຍເມື່ອຄົບກຳນົດ",
+"Rate per year":"ອັດຕາຕໍ່ປີ","Deposit":"ເງິນຝາກ","Each month":"ແຕ່ລະເດືອນ","Final partial year":"ປີສຸດທ້າຍ (ບໍ່ເຕັມປີ)","Paid upfront (12 months)":"ຈ່າຍລ່ວງໜ້າ (12 ເດືອນ)","Interest at maturity":"ດອກເບ້ຍເມື່ອຄົບກຳນົດ","Total received at maturity":"ລວມເງິນທີ່ໄດ້ຮັບເມື່ອຄົບກຳນົດ",
+"UnionPay ATM cards":"ບັດ ATM UnionPay","Card fees and daily ATM withdrawal limits.":"ຄ່າທຳນຽມບັດ ແລະ ວົງເງິນຖອນ ATM ຕໍ່ວັນ.",
+"Blue UnionPay":"UnionPay ສີຟ້າ","Gold UnionPay":"UnionPay ສີທອງ","Daily ATM withdrawal":"ຖອນ ATM ສູງສຸດຕໍ່ວັນ","Card type":"ປະເພດບັດ","New card":"ເປີດບັດໃໝ່","Replacement (lost)":"ອອກບັດໃໝ່ (ກໍລະນີເສຍ)","Normal":"ບັດທຳມະດາ","Quick":"ບັດດ່ວນ (Quick)",
+"Account fees":"ຄ່າທຳນຽມບັນຊີ","Opening and closing an account.":"ການເປີດ ແລະ ປິດບັນຊີ.","Minimum opening balance":"ຍອດເງິນຂັ້ນຕ່ຳໃນການເປີດບັນຊີ","Savings":"ເງິນຝາກປະຢັດ","Fixed":"ເງິນຝາກປະຈຳ","Current":"ເງິນຝາກກະແສລາຍວັນ",
+"A current account has the same minimum balance as a fixed account.":"ບັນຊີກະແສລາຍວັນມີຍອດເງິນຂັ້ນຕ່ຳເທົ່າກັບບັນຊີເງິນຝາກປະຈຳ.","Closing fee":"ຄ່າທຳນຽມປິດບັນຊີ","Account currency":"ສະກຸນເງິນບັນຊີ","Fee to close":"ຄ່າປິດບັນຊີ",
+"Cash withdrawal fee":"ຄ່າທຳນຽມຖອນເງິນສົດ","No fee up to 200,000,000 LAK. Above that, the fee is 0.02% of the amount.":"ບໍ່ມີຄ່າທຳນຽມຫາກບໍ່ເກີນ 200,000,000 LAK. ຖ້າເກີນ, ຄ່າທຳນຽມແມ່ນ 0.02% ຂອງຈຳນວນເງິນ.",
+"Withdrawal amount (LAK)":"ຈຳນວນເງິນຖອນ (LAK)","Fee":"ຄ່າທຳນຽມ","No fee":"ບໍ່ມີຄ່າທຳນຽມ","Withdrawal":"ຖອນເງິນ","Fee rate":"ອັດຕາຄ່າທຳນຽມ","Total you pay":"ລວມທີ່ຕ້ອງຈ່າຍ",
+"Formula: fee = amount × 0.02% when the amount is more than 200,000,000 LAK. The fee applies to the whole amount.":"ສູດຄິດໄລ່: ຄ່າທຳນຽມ = ຈຳນວນເງິນ × 0.02% ເມື່ອຈຳນວນເງິນຫຼາຍກວ່າ 200,000,000 LAK. ຄ່າທຳນຽມຄິດຈາກຈຳນວນເງິນທັງໝົດ.",
+"Lapass transfer fee":"ຄ່າທຳນຽມໂອນ Lapass","Enter the amount and currency to see the fee.":"ໃສ່ຈຳນວນເງິນ ແລະ ສະກຸນເງິນ ເພື່ອເບິ່ງຄ່າທຳນຽມ.","Fee charged in":"ຄິດຄ່າທຳນຽມເປັນສະກຸນ","USD and THB transfers are charged in LAK.":"ການໂອນ USD ແລະ THB ຄິດຄ່າທຳນຽມເປັນ LAK."};
+function tc(c){var x;if(DICT[c])return DICT[c];
+  if(x=c.match(/^(\d+) months$/))return x[1]+" ເດືອນ";
+  if(x=c.match(/^Code: (.+)$/))return "ລະຫັດ: "+x[1];
+  if(x=c.match(/^up to (.+)$/))return "ເຖິງ "+x[1];
+  if(x=c.match(/^over (.+)$/))return "ຫຼາຍກວ່າ "+x[1];
+  if(x=c.match(/^e\.g\. (.+)$/))return "ຕົວຢ່າງ: "+x[1];
+  if(x=c.match(/^Each year \((.+)\)$/))return "ແຕ່ລະປີ ("+x[1]+")";
+  if(c.indexOf(" · ")>0){var p=c.split(" · ");return tc(p[0])+" · "+p[1]}
+  return c}
+function T(s){var m=s.match(/^(\s*)([\s\S]*?)(\s*)$/);return m[2]?m[1]+tc(m[2])+m[3]:s}
+var lang="en",done=new WeakMap(),orig=new WeakMap();
+function apply(t){var cur=t.nodeValue;if(lang!=="lo"||done.get(t)===cur)return;var v=T(cur);orig.set(t,cur);done.set(t,v);if(v!==cur)t.nodeValue=v}
+function walk(n){if(n.nodeType===3)apply(n);else if(n.nodeType===1&&n.tagName!=="SCRIPT"&&n.tagName!=="STYLE")for(var c=n.firstChild;c;c=c.nextSibling)walk(c)}
+new MutationObserver(function(ms){if(lang!=="lo")return;ms.forEach(function(m){if(m.type==="characterData")apply(m.target);else m.addedNodes.forEach(walk)})}).observe(document.body,{childList:true,characterData:true,subtree:true});
+function setLang(l){lang=l;document.documentElement.lang=l;
+  $("l-en").setAttribute("aria-pressed",l==="en");$("l-lo").setAttribute("aria-pressed",l==="lo");
+  if(l==="lo")walk(document.body);
+  else{var w=document.createTreeWalker(document.body,4),t;while(t=w.nextNode()){if(orig.has(t)&&done.get(t)===t.nodeValue){t.nodeValue=orig.get(t);done.delete(t)}}}
+  ["amt","wd","lp"].forEach(function(i){var e=$(i);if(!e.dataset.ph)e.dataset.ph=e.placeholder;e.placeholder=l==="lo"?T(e.dataset.ph):e.dataset.ph})}
+$("l-en").onclick=function(){setLang("en")};$("l-lo").onclick=function(){setLang("lo")};
+var wd=$("wd");
+wd.addEventListener("input",function(){
+  var v=wd.value.replace(/[^0-9.]/g,""),p=v.split(".");p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,",");
+  wd.value=p.length>1?p[0]+"."+p.slice(1).join("").slice(0,2):p[0];
+  var raw=wd.value.replace(/,/g,""),A=parseFloat(raw),n=function(x){return x.toLocaleString("en-US",{maximumFractionDigits:2})+" LAK"};
+  $("wderr").textContent="";
+  if(!raw){$("wdout").hidden=true;return}
+  if(!(A>0)||!isFinite(A)){$("wderr").textContent="Enter an amount greater than 0.";$("wdout").hidden=true;return}
+  var fee=A>200000000?A*0.0002:0;
+  $("wdfee").textContent=fee?n(fee):"No fee";
+  $("wddet").innerHTML="<dt>Withdrawal</dt><dd>"+n(A)+"</dd><dt>Fee rate</dt><dd>"+(fee?"0.02%":"0%")+"</dd><dt>Total you pay</dt><dd>"+n(A+fee)+"</dd>";
+  $("wdout").hidden=false});
+</script>
+</body>
+</html>
